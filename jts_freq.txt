@@ -1,0 +1,2 @@
+eom 1 
+ 13 space 16 F 1 I 1 a 9 b 4 c 4 d 4 e 19 f 2 g 2 h 7 i 7 k 1 l 4 m 2 n 5 o 9 p 2 r 7 s 7 t 8 u 3 v 3 w 5 x 1 y 3

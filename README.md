@@ -1,0 +1,2 @@
+- Added loadTree from chatgpt
+- Added encode, decode, and analize methods from chatgpt
