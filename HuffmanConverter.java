@@ -12,46 +12,72 @@ public class HuffmanConverter {
     String treeStr = StdinToString.readfile(treeFile);
     //System.out.println("treeStr: " + treeStr); debug
     HuffmanTree tree = HuffmanTree.loadTree(treeStr);
-    tree.printTree(); 
+    //tree.printTree(); 
 
     String input = StdinToString.read();
     //System.out.println("Input: " + input);
 
     if (mode.equals("decode")) {
-      StringBuilder decoded = new StringBuilder();
+        StringBuilder decoded = new StringBuilder();
 
-      // Reset the tree iterator
-      tree.resetIterator();
+        // Reset the tree iterator
+        tree.resetIterator();
 
-      // Variable to track if extra zeros are encountered
-      boolean encounteredEndOfMessage = false;
+        boolean messageStarted = false; // Flag to indicate when the message starts
+        boolean encounteredEndOfMessage = false; // Flag to indicate when the end-of-message is encountered
 
-      for (char bit : input.toCharArray()) {
-          // If we already encountered \e, skip processing further bits
-          if (encounteredEndOfMessage) {
-              break;
-          }
+        for (char bit : input.toCharArray()) {
+            // Skip filler bits before the message starts
+            if (!messageStarted) {
+                String symbol = tree.advanceCurrent(bit);
+                if (symbol != null && !symbol.equals("\\e")) { // A valid symbol is detected
+                    messageStarted = true;  // Start of the message
+                    decoded.append(symbol);  // Add the first valid symbol
+                }
+                continue;  // Skip further processing for filler bits
+            }
 
-          String symbol = tree.advanceCurrent(bit);
+            // Stop decoding if the end-of-message (\e) is encountered
+            if (encounteredEndOfMessage) {
+                break;  // Stop processing further bits
+            }
 
-          // If we reached the end-of-message symbol, stop decoding
-          if (symbol == null) {
-              encounteredEndOfMessage = true;
-              System.out.println("reached");
-              break; // Stop decoding after encountering the end-of-message
-          }
+            // Process subsequent bits after the message has started
+            String symbol = tree.advanceCurrent(bit);
+            if (symbol != null) { // A leaf node is reached
+                if (symbol.equals("\\e")) { // End-of-message symbol
+                    encounteredEndOfMessage = true;  // Stop decoding after \e
+                    break;
+                }
+                decoded.append(symbol);  // Append the symbol to the decoded message
+            }
+        }
 
-          decoded.append(symbol); // Append the symbol to the output
+        // Print the decoded string
+        System.out.println(decoded.toString());
+    } else if (mode.equals("analyze")) {
+      int encodedBits = 0;
+      int originalCharacterCount = input.length();
+
+      for (char c : input.toCharArray()) {
+          String encodedCharacter = encodeCharacter(tree, c);
+          encodedBits += encodedCharacter.length();
       }
 
-      // Print the decoded string
-      System.out.println(decoded.toString());
-    } else if (mode.equals("analyze")) {
+      // Add the bits for the end-of-message (\e)
+      String eomEncoding = encodeCharacter(tree, "\\e"); // Treat \e as a String
+      encodedBits += eomEncoding.length();
 
-      // TODO - implement this!
-      System.out.println("analyze mode not implemented");
+      // Calculate the average bits per character
+      double averageBitsPerCharacter = (double) encodedBits / originalCharacterCount;
+
+      // Output the analysis results
+      System.out.println("Encoded Bits: " + encodedBits);
+      System.out.println("Original Character Count: " + originalCharacterCount);
+      System.out.println("Average Bits Per Character: " + averageBitsPerCharacter); 
 
     } else if (mode.equals("encode")) {
+      //System.out.println("Input: " + input);
       StringBuilder encoded = new StringBuilder();
         for (char c : input.toCharArray()) {
             encoded.append(encodeCharacter(tree, c));
@@ -70,19 +96,34 @@ public class HuffmanConverter {
       return bits.toString();
   }
 
-  private static boolean encodeCharacterRecursive(HuffmanTree.HuffmanNode node, char c, String currentPath, StringBuilder result) {
+  private static String encodeCharacter(HuffmanTree tree, String str) {
+    if (str.equals("\\e")) {
+        // Handle the special case for \\e
+        StringBuilder bits = new StringBuilder();
+        encodeCharacterRecursive(tree.getRoot(), '\\', "", bits); // Encode the backslash
+        encodeCharacterRecursive(tree.getRoot(), 'e', "", bits);  // Encode the 'e'
+        return bits.toString();
+    } else if (str.length() == 1) {
+        // If the string has only one character, use the original method
+        return encodeCharacter(tree, str.charAt(0));
+    } else {
+        throw new IllegalArgumentException("Invalid input: Only single characters or \\e are allowed.");
+    }
+  }
+
+  private static boolean encodeCharacterRecursive(HuffmanTree.HuffmanNode node, char c, String currentPath, StringBuilder bits) {
       if (node == null) return false;
 
       if (node.left == null && node.right == null) { // Leaf node
           //System.out.println("Leaf node symbol: " + node.symbols + " currentPath: " + currentPath);
           if (HuffmanTree.convertSymbolToChar(node.symbols).equals(String.valueOf(c))) {
-              result.append(currentPath);
+              bits.append(currentPath);
               return true;
           }
           return false;
       }
 
-      return encodeCharacterRecursive(node.left, c, currentPath + "0", result) ||
-             encodeCharacterRecursive(node.right, c, currentPath + "1", result);
+      return encodeCharacterRecursive(node.left, c, currentPath + "0", bits) ||
+             encodeCharacterRecursive(node.right, c, currentPath + "1", bits);
   }
 }

@@ -120,7 +120,7 @@ public class HuffmanTree {
     } else {
       tree.printTreeSpec();
     }
-    tree.debugPrintTree();
+    //tree.debugPrintTree();
   }
 
   public void debugPrintTree() {
@@ -176,7 +176,7 @@ private void debugPrintNode(HuffmanNode node, String prefix) {
                 stack.push(new HuffmanNode(symbol, 0));
             }
         }
-        debugPrintStack(stack);
+        //debugPrintStack(stack);
         index++;
     }
 
@@ -186,7 +186,7 @@ private void debugPrintNode(HuffmanNode node, String prefix) {
       HuffmanNode left = stack.pop();
       HuffmanNode parent = new HuffmanNode(left, right);
       stack.push(parent);
-      debugPrintStack(stack);
+      //debugPrintStack(stack);
     }
 
     // The final node in the stack is the root of the tree
@@ -241,6 +241,7 @@ private void debugPrintNode(HuffmanNode node, String prefix) {
       this.currentNode = this.root;
   }
 
+
 public String advanceCurrent(char bit) {
     if (bit == '0') {
         currentNode = currentNode.left;
@@ -250,15 +251,9 @@ public String advanceCurrent(char bit) {
         throw new IllegalArgumentException("Invalid bit: " + bit);
     }
 
-    // Check if the current node is a leaf
+    // If the current node is a leaf, return its symbol
     if (currentNode.left == null && currentNode.right == null) {
         String symbol = convertSymbolToChar(currentNode.symbols);
-
-        // If it's the end-of-message symbol, return null and reset to stop further decoding
-        if (symbol.equals("\\e")) {
-            return null;  // Signal that decoding should stop
-        }
-
         currentNode = root; // Reset to root for next traversal
         return symbol;
     }
